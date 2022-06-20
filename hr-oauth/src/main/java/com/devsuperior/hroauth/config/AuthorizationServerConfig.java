@@ -1,6 +1,7 @@
 package com.devsuperior.hroauth.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +16,12 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 @Configuration
 @EnableAuthorizationServer //Essa assinatura serve para configurar por baixo dos panos esse ms como um servidor de autorização do oauth
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+	
+	@Value("${oauth.client.name}")
+	private String clientName;
+	
+	@Value("${oauth.client.secret}")
+	private String clientSecret;
 
 	// Injetando as dependências dos beans criados na classe AppConfig
 	
@@ -46,8 +53,8 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
 		
 		clients.inMemory()
-		.withClient("myappname123")
-		.secret(passwordEncoder.encode("myappsecret123"))
+		.withClient(clientName)
+		.secret(passwordEncoder.encode(clientSecret))
 		.scopes("read", "write")
 		.authorizedGrantTypes("password")
 		.accessTokenValiditySeconds(86400); //tempo de expiração (em segundos) do token.
