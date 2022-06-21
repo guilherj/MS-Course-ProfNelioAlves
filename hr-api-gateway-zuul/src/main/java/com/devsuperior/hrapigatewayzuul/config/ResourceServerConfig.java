@@ -1,13 +1,22 @@
 package com.devsuperior.hrapigatewayzuul.config;
 
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableResourceServer
@@ -55,8 +64,47 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter{
 		
 		.anyRequest().authenticated(); /*Qualquer outra rota que não esteja especificado acima
 		precisará ser autenticado primeiro, pode acessar mais desde que esteja autenticado.*/
+		
+		// Chamando os Beans de CORS feito abaixo.
+		http.cors().configurationSource(corsConfigurationSource());
 	}
 	
 	
+	/* Os Beans abaixo servem para configurar o CORS que é uma medida de segurança que os navegadores tem
+	 * de impedir que aplicações acessem outras aplicações de dominios diferentes. Porém como
+	 * estamos trabalhando com microserviços e é necessário muitas das vezes que uma aplicação de outro dominio
+	 * tenha acesso a eles fazemos essa configuração de CORS para liberar esses acessos.
+	 * 
+	 * 
+	 */	
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		
+		CorsConfiguration corsConfig = new CorsConfiguration();
+		corsConfig.setAllowedOrigins(Arrays.asList("*")); //Qual origem será liberada "*" siginifica todas as origens
+		corsConfig.setAllowedMethods(Arrays.asList("POST", "GET", "DELETE", "PATCH")); //Quais metodos serão liberados
+		corsConfig.setAllowCredentials(true); //Precisará de credenciais?
+		corsConfig.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); //Quais cabeçalhos serão liberados?
+		
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		
+		source.registerCorsConfiguration("/**", corsConfig);
+		
+		return source;
+		
+	}
+	
+	
+	@Bean
+	public FilterRegistrationBean<CorsFilter> corsFilter(){
+		
+		FilterRegistrationBean<CorsFilter> bean 
+		= new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource()));
+		
+		// A linha abaixo diz que esse filtro deve ser executado com alta precedência.
+		bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+		
+		return bean;
+	}
 
 }
